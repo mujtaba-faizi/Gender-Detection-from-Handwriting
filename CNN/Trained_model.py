@@ -9,15 +9,56 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.models import model_from_json
 from PIL import Image
 import cv2
+from numpy import genfromtxt
+import cv2
+import os.path
+
+# train=[]  #for holding the images after reading
+# test=[]
+# # image path and valid extensions
+# imageDir = "Datasets/Small/"  # specify your path here
+# image_path_list = []
+# valid_image_extensions = [".jpg"]  # specify your vald extensions here
+# valid_image_extensions = [item.lower() for item in valid_image_extensions]
+#
+# # create a list all files in directory and
+# # append files with a vaild extention to image_path_list
+# for file in os.listdir(imageDir):
+#     extension = os.path.splitext(file)[1]
+#     if extension.lower() not in valid_image_extensions:
+#         continue
+#     image_path_list.append(os.path.join(imageDir, file))
+#
+# count=0
+# # loop through image_path_list to open each image
+# for imagePath in image_path_list:
+#     print(imagePath)
+#     image = cv2.imread(imagePath)
+#     arr=np.asarray(image)
+#     count+=1
+#     if count>983801:
+#         test.append(arr)
+#     else:
+#         train.append(arr)
+#
+
 
 # DATASETS
-from keras.datasets import cifar10
-(train_images, train_labels), (test_images, test_labels) = cifar10.load_data()
+# train_images=np.asarray(train)
+train_labels = genfromtxt('Labels/train_labels.csv', delimiter=',',dtype=np.int32)
+# test_images=np.asarray(test)
+test_labels = genfromtxt('Labels/test_labels.csv', delimiter=',',dtype=np.int32)
 
+
+#np.save('Datasets/Training_images.npy', train_images)    # .npy extension is added if not given
+#np.save('Datasets/Testing_images.npy',test_images)
+train_data=np.load('Datasets/Training_images.npy')    # .npy extension is added if not given
+test_data=np.load('Datasets/Testing_images.npy')
 # EXPLORING
-print('Training data shape : ', train_images.shape, train_labels.shape)
+print('Training data shape : ', train_data.shape, train_labels.shape)
 
-print('Testing data shape : ', test_images.shape, test_labels.shape)
+print('Testing data shape : ', test_data.shape, test_labels.shape)
+
 
 # Find the unique numbers from the train labels
 classes = np.unique(train_labels)
@@ -25,26 +66,35 @@ nClasses = len(classes)
 print('Total number of outputs : ', nClasses)
 print('Output classes : ', classes)
 
-plt.figure(figsize=[4,2])
-
-# Display the first image in training data
-plt.subplot(121)
-plt.imshow(train_images[0,:,:], cmap='gray')
-plt.title("Ground Truth : {}".format(train_labels[0]))
-
-# Display the first image in testing data
-plt.subplot(122)
-plt.imshow(test_images[0,:,:], cmap='gray')
-plt.title("Ground Truth : {}".format(test_labels[0]))
-
-#   PRE-PROCESSING
-# Find the shape of input images and create the variable input_shape
-nRows,nCols,nDims = train_images.shape[1:]
-train_data = train_images.reshape(train_images.shape[0], nRows, nCols, nDims)
-test_data = test_images.reshape(test_images.shape[0], nRows, nCols, nDims)
-input_shape = (nRows, nCols, nDims)
-print(input_shape)
+train_images=np.ones((983801,32,32,3), 'float32')
+a=cv2.normalize(train_images.astype(np.float32), None,0.0,1.0,cv2.NORM_MINMAX)
 # Change to float datatype
+# d1=[]
+# d2=[]
+# #
+# count=0
+# for a in train_images:
+#      count+=1
+#      a=a.reshape(32,32,3)
+#      d=cv2.normalize(a.astype(np.float32 ), None,0.0,1.0,cv2.NORM_MINMAX)
+#      print("training",count)
+#      d1.append(d)
+#
+# train_data = np.asarray(d1, dtype=np.float32)
+# np.save('Datasets/Normalized_Training_images.npy', train_data)    # .npy extension is added if not given
+# print("Saved Float Normalized Training images arrays")
+
+# count=0
+# for a in test_data:
+#     count+=1
+#     d=cv2.normalize(a.astype(np.float32), None,0.0,1.0,cv2.NORM_MINMAX)
+#     print("testing",count)
+#     d2.append(d)
+#
+# test_data=np.asarray(d2,dtype=np.float32)
+# np.save('Datasets/Normalized_Testing_images.npy',test_data)
+# print("Saved Float Normalized Testing images arrays")
+
 train_data = train_data.astype('float32')
 test_data = test_data.astype('float32')
 
@@ -61,23 +111,43 @@ print('Original label 0 : ', train_labels[0])
 print('After conversion to categorical ( one-hot ) : ', train_labels_one_hot[0])
 
 # load json and create model
-json_file = open('Trained_models_weights/model.json', 'r')
+json_file = open('Trained_models_weights/Catsdogs_model.json', 'r')
 loaded_model_json = json_file.read()
 json_file.close()
 loaded_model = model_from_json(loaded_model_json)
 # load weights into new model
-loaded_model.load_weights("Trained_models_weights/model.h5")
+loaded_model.load_weights("Trained_models_weights/Catsdogs_weights.h5")
 print("Loaded model from disk")
+
 
 # evaluate loaded model on test data
 loaded_model.compile(loss='binary_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
-score = loaded_model.evaluate(test_data, test_labels_one_hot, verbose=0)
-print("score",score)
-print("%s: %.2f%%" % (loaded_model.metrics_names[1], score[1] * 100))
+batch_size = 256
+epochs = 50
+datagen = ImageDataGenerator(
+#         zoom_range=0.2, # randomly zoom into images
+#         rotation_range=10,  # randomly rotate images in the range (degrees, 0 to 180)
+        width_shift_range=0.1,  # randomly shift images horizontally (fraction of total width)
+        height_shift_range=0.1,  # randomly shift images vertically (fraction of total height)
+        horizontal_flip=True,  # randomly flip images
+        vertical_flip=False)  # randomly flip images
 
-im1 = Image.open("plane.jpg")
-im3 = im1.resize((32, 32), Image.BILINEAR)     # linear interpolation in a 2x2 environment
-arr=np.asarray(im3)
-arr=arr.reshape(1,32,32,3)
-print(arr.shape)
-print(loaded_model.predict(arr))
+
+# datagen.fit(train_data)
+
+# Fit the model on the batches generated by datagen.flow().
+history2 = loaded_model.fit_generator(datagen.flow(train_data, train_labels_one_hot, batch_size=batch_size),
+                              steps_per_epoch=int(np.ceil(train_data.shape[0] / float(batch_size))),
+                              epochs=epochs,
+                              validation_data=(test_data, test_labels_one_hot),
+                              workers=4)
+
+loaded_model.evaluate(test_data, test_labels_one_hot)
+#   SAVE MODEL & WEIGHTS
+# serialize model to JSON
+model_json = loaded_model.to_json()
+with open("Trained_models_weights/Handwriting_model.json", "w") as json_file:
+    json_file.write(model_json)
+# serialize weights to HDF5
+loaded_model.save_weights("Trained_models_weights/Handwriting_weights.h5")
+print("Saved model to disk")

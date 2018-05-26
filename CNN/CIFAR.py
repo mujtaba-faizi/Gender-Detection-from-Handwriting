@@ -7,6 +7,7 @@ from keras.layers import Dense, Conv2D, MaxPooling2D, Dropout, Flatten
 from keras.utils import to_categorical
 from keras.preprocessing.image import ImageDataGenerator
 from keras.models import model_from_json
+import cv2
 
 # DATASETS
 from keras.datasets import cifar10
@@ -16,6 +17,37 @@ from keras.datasets import cifar10
 print('Training data shape : ', train_images.shape, train_labels.shape)
 
 print('Testing data shape : ', test_images.shape, test_labels.shape)
+
+train_x=[]
+train_y=[]
+test_x=[]
+test_y=[]
+
+for a in range(0, 50000):     #for training data
+    if train_labels[a]==5:
+        train_y.append(0)
+        train_x.append(train_images[a])
+    elif train_labels[a]==3:
+        train_y.append(1)
+        train_x.append(train_images[a])     # keeping only cats and dogs data for 2 class classification only & converting labels 5,3 to 0,1 respectively
+
+for a in range(0, 10000):   #for testing data
+    if test_labels[a]==5:
+        test_y.append(0)
+        test_x.append(test_images[a])
+    elif test_labels[a]==3:
+        test_y.append(1)
+        test_x.append(test_images[a])     # keeping only cats and dogs data for 2 class classification only & converting labels 5,3 to 0,1 respectively
+
+train_images = np.array(train_x)   #converting lists into ndarrays
+train_labels = np.array(train_y)
+test_images = np.array(test_x)
+test_labels = np.array(test_y)
+
+# EXPLORING
+print('New Training data shape : ', train_images.shape, train_labels.shape)
+
+print('New Testing data shape : ', test_images.shape, test_labels.shape)
 
 # Find the unique numbers from the train labels
 classes = np.unique(train_labels)
@@ -116,10 +148,10 @@ model2.evaluate(test_data, test_labels_one_hot)
 #   SAVE MODEL & WEIGHTS
 # serialize model to JSON
 model_json = model2.to_json()
-with open("model.json", "w") as json_file:
+with open("Trained_models_weights/Catsdogs_model.json", "w") as json_file:
     json_file.write(model_json)
 # serialize weights to HDF5
-model2.save_weights("model.h5")
+model2.save_weights("Trained_models_weights/Catsdogs_weights.h5")
 print("Saved model to disk")
 
 #   LOSS & ACCURACY CRVES

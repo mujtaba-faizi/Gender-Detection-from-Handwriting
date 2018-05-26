@@ -35,12 +35,11 @@ def split(arr,name, m, n):
 
 def csvhandeling(labels,n1,n2):       #to the labels for all newly created 32x32 images (n1 being the no. of 32x32 images for one document, n2 being the location where to start adding the labels)
     doc_label= labels[n2]   #extracting label for the whole document
-    for a in range(n1*4):
+    for a in range(n1):
         labels=np.insert(labels,n2,doc_label)
-
     return labels
 
-train_labels = genfromtxt('Labels/train_answers.csv', delimiter=',',dtype=np.int32)
+train_labels = genfromtxt('Labels/labels.csv', delimiter=',',dtype=np.int32)
 
 # image path and valid extensions
 imageDir = "Datasets/Big/"  # specify your path here
@@ -74,18 +73,14 @@ for imagePath in image_path_list:
     retval, crop = cv2.threshold(crop, thresh=200, maxval=255, type=cv2.THRESH_BINARY)
     print("Saving processed 32x32 images for the document ", imagePath)
     n=split(crop,imagePath, 32, 32)
-    if (count%4==0):     #since one writer produces 4 documents
-        train_labels=csvhandeling(train_labels,n,count)
-        train_labels=np.delete(train_labels,count)
-    count=count+(n*4)
+    print("n",n)
+    count=count+n              #taking 0th image into consideration
     # exit when escape key is pressed
     key = cv2.waitKey(0)
     if key == 27:  # escape
         break
-
+print("Total images ",count)
 train_labels=np.reshape(train_labels,(-1,1))
-print("Saving the new labels in a csv file..")
-np.savetxt("Labels/processed_labels.csv", train_labels, delimiter=",", fmt="%i")
-print("Labels have been saved")
+
 # close any open windows
 cv2.destroyAllWindows()
