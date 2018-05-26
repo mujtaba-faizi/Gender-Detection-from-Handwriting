@@ -9,3 +9,6 @@ https://www.kaggle.com/c/icdar2013-gender-prediction-from-handwriting/data
 2. Preprocess documents to be sliced into 32x32x3 images + adjust labels accordingly   
 3. Fix classes of cifar network to be used as 0,1 only
 4. Transfer learning
+
+## Example of Images after preprocessing
+<img src="/readme_imgs/Picture1.png" alt="My cool logo"/>
